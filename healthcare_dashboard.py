@@ -1,4 +1,6 @@
 from sklearn.linear_model import LinearRegression
+from streamlit_folium import st_folium
+import folium
 import altair as alt
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -401,9 +403,6 @@ def intro():
 
     # Get transformed dataframes from streamlit cache
     e_admissions = emergency_admissions_data()
-    df_acsc = acsc_admissions_data()
-    df_fastfood = fast_food_data()
-    air_pollution = air_pollution_data()
 
     # Remove whitespace from the top of the page and sidebar
     st.markdown("""
@@ -423,9 +422,6 @@ def intro():
             </style>
             """, unsafe_allow_html=True)
 
-    # Read in London Boroughs geographical data (borough boundaries) using geopandas
-    london_df = gpd.read_file('Data/statistical-gis-boundaries-london/ESRI/London_Borough_Excluding_MHW.shp')
-
     # Date slider widget
     year = st.slider('Select a range of values', 2003, 2020, 2003)
     df_str = 'df_' + str(year)
@@ -433,36 +429,17 @@ def intro():
     if str(year) == '2020':
         st.write('*Note: from 2020 onwards NHS "Hospital Admitted Patient Care Activity" groups CCG data for many boroughs together, therefore the data is incomplete at an individual borough level*')
 
-    # Merge geographic information for boroughs with emergency admissions data
-    if year < 2015:
-        merged = london_df.set_index('NAME').join(e_admissions[df_str].set_index('Area'))
-    else:
-        merged = london_df.set_index('NAME').join(e_admissions[df_str].set_index('Area'))
-        # new df -> convert provider to borough
-        # merge new df
+    map_df = e_admissions[df_str].copy()
+    columnsused = ['Area', 'EmergencyAdmissions']
 
-    # Create choropleth map of London Boroughs using merged df for the year selected
-    vmin,vmax=merged['EmergencyAdmissions'].min(),merged['EmergencyAdmissions'].max()
-    fig,ax=plt.subplots(1,figsize=(12,7.5))
-    merged.plot(column='EmergencyAdmissions',cmap='PuBu',ax=ax)
-    merged.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=0.1)
-    ax.axis('off')
-    plt.title('Emergency Hospital Admissions',{'fontsize': '14',
-    'fontweight' :'100'})
-    sm = plt.cm.ScalarMappable(cmap='Blues', norm=plt.Normalize(vmin=vmin, vmax=vmax))
-    cbar = fig.colorbar(sm)
-
-    # Set webpage columns
     fig_col1, fig_col2 = st.columns((2,4), gap="large")
 
     with fig_col1:
-        # Plot ordered bar chart of emergency admissions by Borough for the year selected
         new_df = e_admissions[df_str][['Area', 'EmergencyAdmissions']]
         bars = alt.Chart(new_df).mark_bar(size=16).encode(
             x=alt.X('EmergencyAdmissions:Q', title=''),
             y=alt.Y('Area', sort='-x', title='')
         ).properties(
-            # width=alt.Step(50),
             width=500,
             height=850
         ).configure_axis(
@@ -474,8 +451,32 @@ def intro():
         st.altair_chart(bars)
 
     with fig_col2:
-        # Plot choropleth map
-        st.pyplot(fig)
+        map = folium.Map(location=[51.5, 0], zoom_start=10, tiles='cartodbpositron')
+        choropleth = folium.Choropleth(
+            geo_data = 'Data/london_boroughs.json',
+            data = map_df,
+            columns = columnsused,
+            key_on = 'feature.properties.name',
+            fill_color="PuBu",
+            fill_opacity=0.8,
+            line_opacity = 0.7,
+            highlight=True
+        )
+        choropleth.geojson.add_to(map)
+
+        for feature in choropleth.geojson.data['features']:
+            borough = feature['properties']['name']
+            feature['properties']['area_hectares'] = 'Emergency Admissions: ' + str(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == borough, 'EmergencyAdmissions'].iloc[0])
+        choropleth.geojson.add_child(
+            folium.features.GeoJsonTooltip(fields=['name', 'area_hectares'], labels=False)
+        )
+        st_map = st_folium(map, width=1200, height=750)
+
+        # borough_selected = ''
+        # if st_map['last_active_drawing']:
+        #     borough_selected = st_map['last_active_drawing']['properties']['name']
+        #     # individual_data_suite(borough_selected)
+
 
 
 
