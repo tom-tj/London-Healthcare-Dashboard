@@ -1,5 +1,7 @@
+from sklearn.linear_model import LinearRegression
 import altair as alt
 import matplotlib.pyplot as plt
+import plotly.express as px
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -510,96 +512,232 @@ def individual_data_suite(borough):
     df_fastfood = fast_food_data()
     air_pollution = air_pollution_data()
 
-    # Date slider widget from 2003-2020
-    dates = st.slider('Select a range of values',2003, 2020, (2003, 2020))
-    # Attributes option select
-    options = st.multiselect('Select attributes', ['Emergency Admissions', 'Ambulatory Care Sensitive Condition Admissions', 'Fast Food Prevalence', 'Particulate Emissions'], default=['Emergency Admissions', 'Ambulatory Care Sensitive Condition Admissions', 'Fast Food Prevalence', 'Particulate Emissions'])
+    tab1, tab2 = st.tabs(["Time Series", "Attribute Correlations"])
 
-    # 
+    with tab1:
+        # Date slider widget from 2003-2020
+        dates = st.slider('Select a range of values',2003, 2020, (2003, 2020))
+        # Attributes option select
+        options = st.multiselect('Select attributes', ['Emergency Admissions', 'Ambulatory Care Sensitive Condition Admissions', 'Fast Food Prevalence', 'Particulate Emissions'], default=['Emergency Admissions', 'Ambulatory Care Sensitive Condition Admissions', 'Fast Food Prevalence', 'Particulate Emissions'])
 
-    # Rename attributes for later line graphing
-    if 'Emergency Admissions' in options:
-        options = list(map(lambda x: x.replace('Emergency Admissions', 'Emergency Admissions/100'), options))
-    if 'Ambulatory Care Sensitive Condition Admissions' in options:
-        options = list(map(lambda x: x.replace('Ambulatory Care Sensitive Condition Admissions', 'ACSC Admissions/10'), options))
-    if 'Fast Food Prevalence' in options:
-        options = list(map(lambda x: x.replace('Fast Food Prevalence', 'Number of Takeaways'), options))
-    if 'Particulate Emissions' in options:
-        options = list(map(lambda x: x.replace('Particulate Emissions', 'PM2.5 Particulate Emissions (tonnes/year)'), options))
-    
-    # Add 'Date' in order to create 'Date' column in dataframe
-    options.insert(0, 'Date')
-    # Use list of attributes to create df
-    borough_df = pd.DataFrame(columns=options)
+        # Rename attributes for later line graphing
+        if 'Emergency Admissions' in options:
+            options = list(map(lambda x: x.replace('Emergency Admissions', 'Emergency Admissions/100'), options))
+        if 'Ambulatory Care Sensitive Condition Admissions' in options:
+            options = list(map(lambda x: x.replace('Ambulatory Care Sensitive Condition Admissions', 'ACSC Admissions/10'), options))
+        if 'Fast Food Prevalence' in options:
+            options = list(map(lambda x: x.replace('Fast Food Prevalence', 'Number of Takeaways'), options))
+        if 'Particulate Emissions' in options:
+            options = list(map(lambda x: x.replace('Particulate Emissions', 'PM2.5 Particulate Emissions (tonnes/year)'), options))
+        
+        # Add 'Date' in order to create 'Date' column in dataframe
+        options.insert(0, 'Date')
+        # Use list of attributes to create df
+        borough_df = pd.DataFrame(columns=options)
 
-    # List of years for which there is no air pollution data available
-    no_air_vals = [2003,2004,2005,2006,2007,2009,2011,2014,2017,2018]
+        # List of years for which there is no air pollution data available
+        no_air_vals = [2003,2004,2005,2006,2007,2009,2011,2014,2017,2018]
 
-    # Create rows with attribute values for each year in range
-    for i in range(dates[0], dates[1]+1):
-        year_vals = [str(i)]
-        df_str = 'df_' + str(i)
-        if 'Emergency Admissions/100' in options:
-            # NHS data incomplete for 2020
-            if i == 2020:
-                if borough not in ['Ealing', 'Brent', 'Newham', 'Waltham Forest', 'Hounslow', 'Hillingdon', 'Havering', 'Redbridge', 'Tower Hamlets', 'Harrow', 'Hackney', 'Barking and Dagenham', 'Kensington and Chelsea', 'Hammersmith and Fulham', 'Westminster', 'City of London']:
-                    year_vals.append(np.nan)
+        # Create rows with attribute values for each year in range
+        for i in range(dates[0], dates[1]+1):
+            year_vals = [str(i)]
+            df_str = 'df_' + str(i)
+            if 'Emergency Admissions/100' in options:
+                # NHS data incomplete for 2020
+                if i == 2020:
+                    if borough not in ['Ealing', 'Brent', 'Newham', 'Waltham Forest', 'Hounslow', 'Hillingdon', 'Havering', 'Redbridge', 'Tower Hamlets', 'Harrow', 'Hackney', 'Barking and Dagenham', 'Kensington and Chelsea', 'Hammersmith and Fulham', 'Westminster', 'City of London']:
+                        year_vals.append(np.nan)
+                    else:
+                        year_vals.append(float(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == str(borough), 'EmergencyAdmissions'])/100)
                 else:
                     year_vals.append(float(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == str(borough), 'EmergencyAdmissions'])/100)
-            else:
-                year_vals.append(float(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == str(borough), 'EmergencyAdmissions'])/100)
-        if 'ACSC Admissions/10' in options:
-            df_str = str(i)
-            year_vals.append(float(df_acsc.loc[(df_acsc['Year'] == df_str) & (df_acsc['Area'] == str(borough)) & (df_acsc['Quarter'] == 'Annual')].head(1)['Observed'])/10)
-        if 'Number of Takeaways' in options:
-            df_str = str(i)
-            year_vals.append(float(df_fastfood.loc[(df_fastfood['Area'] == str(borough))].head(1)[df_str]))
-        if 'PM2.5 Particulate Emissions (tonnes/year)' in options:
-            df_str = 'df_' + str(i)
-            if i in no_air_vals:
-                year_vals.append(np.nan)
-            else:
-                year_vals.append(float(air_pollution[df_str].loc[(air_pollution[df_str]['Area'] == str(borough))]['PM25']))
-        
-        # Add row created to end of df
-        borough_df.loc[len(borough_df)] = year_vals
+            if 'ACSC Admissions/10' in options:
+                df_str = str(i)
+                year_vals.append(float(df_acsc.loc[(df_acsc['Year'] == df_str) & (df_acsc['Area'] == str(borough)) & (df_acsc['Quarter'] == 'Annual')].head(1)['Observed'])/10)
+            if 'Number of Takeaways' in options:
+                df_str = str(i)
+                year_vals.append(float(df_fastfood.loc[(df_fastfood['Area'] == str(borough))].head(1)[df_str]))
+            if 'PM2.5 Particulate Emissions (tonnes/year)' in options:
+                df_str = 'df_' + str(i)
+                if i in no_air_vals:
+                    year_vals.append(np.nan)
+                else:
+                    year_vals.append(float(air_pollution[df_str].loc[(air_pollution[df_str]['Area'] == str(borough))]['PM25']))
+            
+            # Add row created to end of df
+            borough_df.loc[len(borough_df)] = year_vals
 
-    # Line Graph of Attributes selected over time period selected
-    st.markdown("### Time Series")
-    # Convert df from wide to long format, drop empty rows
-    borough_df = borough_df.melt('Date').dropna()
-    line = alt.Chart(borough_df).mark_line().encode(
-        x=alt.X('Date', scale=alt.Scale(zero=False)),
-        y=alt.Y('value', axis=alt.Axis(labels=False)),
-        color='variable',
-    ).properties(
-        width=1400,
-        height=600
-    ).configure_axis(
-        grid=False
-    ).configure_view(
-        strokeWidth=0
-    )
-    line_plot = st.altair_chart(line)
 
-    # Animate line chart, redraw whenever page reloaded
-    # Use for loop to plot an extra row of the df each iteration
-    for i in range(1, borough_df.shape[0]+1):
-        temp_df = borough_df.iloc[0:i]
-        line = alt.Chart(temp_df).mark_line().encode(
-            x=alt.X('Date', scale=alt.Scale(zero=False)),
-            y=alt.Y('value', axis=alt.Axis(labels=False)),
-            color='variable',
-        ).properties(
-            width=1400,
-            height=600
-        ).configure_axis(
-            grid=False
-        ).configure_view(
-            strokeWidth=0
+        fig_col1, fig_col2 = st.columns((11,3),gap='medium')
+
+        with fig_col1:
+            st.markdown('##')
+            # Line Graph of Attributes selected over time period selected
+            st.markdown("### Time Series")
+            # Convert df from wide to long format, drop empty rows
+            borough_long_df = borough_df.melt('Date').dropna()
+            line = alt.Chart(borough_long_df).mark_line().encode(
+                x=alt.X('Date', scale=alt.Scale(zero=False)),
+                y=alt.Y('value', axis=alt.Axis(labels=False)),
+                color='variable',
+            ).properties(
+                width=1400,
+                height=600
+            ).configure_axis(
+                grid=False
+            ).configure_view(
+                strokeWidth=0
+            )
+            line_plot = st.altair_chart(line, use_container_width=True)
+
+            # Animate line chart, redraw whenever page reloaded
+            # Loop to plot an extra row of the df each iteration
+            for i in range(1, borough_long_df.shape[0]+1):
+                temp_df = borough_long_df.iloc[0:i]
+                line = alt.Chart(temp_df).mark_line().encode(
+                    x=alt.X('Date', scale=alt.Scale(zero=False)),
+                    y=alt.Y('value', axis=alt.Axis(labels=False)),
+                    color='variable',
+                ).properties(
+                    width=1400,
+                    height=600
+                ).configure_axis(
+                    grid=False
+                ).configure_view(
+                    strokeWidth=0
+                )
+                line_plot = line_plot.altair_chart(line, use_container_width=True)
+
+        with fig_col2:
+            df_str = 'df_' + str(dates[1])
+
+            st.markdown(
+                """
+            <style>
+            [data-testid="metric-container"] {
+                background-color: rgba(28, 131, 150, 0.1);
+                border: 1px solid rgba(28, 131, 150, 0.1);
+                padding: 5% 5% 5% 10%;
+                border-radius: 5px;
+                color: rgb(30, 103, 119);
+                overflow-wrap: break-word;
+            }
+            [data-testid="stMetricLabel"] {
+                overflow-wrap: break-word;
+                white-space: break-spaces;
+                font-size: 20px;
+            }
+            [data-testid="stMetricValue"] {
+                font-size: 40px;
+            }
+            [data-testid="stMetricDelta"] {
+                font-size: 25px;
+            }
+            </style>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            if df_str != 'df_2020':
+                fig_col2.metric(
+                    label="Emergency Admissions vs 2003",
+                    value=int(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == borough, 'EmergencyAdmissions']),
+                    delta=str(round((int(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == borough, 'EmergencyAdmissions']) / int(e_admissions['df_2003'].loc[e_admissions['df_2003']['Area'] == borough, 'EmergencyAdmissions'])) * 100 - 100)) + '%'
+                )
+
+            fig_col2.metric(
+                label="ACSC admissions vs 2003",
+                value=int(df_acsc.loc[(df_acsc['Year'] == str(dates[1])) & (df_acsc['Area'] == borough) & (df_acsc['Quarter'] == 'Annual')].head(1)['Observed']),
+                delta=str(round((int(df_acsc.loc[(df_acsc['Year'] == str(dates[1])) & (df_acsc['Area'] == borough) & (df_acsc['Quarter'] == 'Annual')].head(1)['Observed']) / int(df_acsc.loc[(df_acsc['Year'] == '2003') & (df_acsc['Area'] == borough) & (df_acsc['Quarter'] == 'Annual')].head(1)['Observed']))*100-100))+'%',
+            )
+
+            fig_col2.metric(
+                label="Takeaways vs 2003",
+                value=int(df_fastfood.loc[(df_fastfood['Area'] == borough)].head(1)[str(dates[1])]),
+                delta=str(round((int(df_fastfood.loc[(df_fastfood['Area'] == borough)].head(1)[str(dates[1])]) / int(df_fastfood.loc[(df_fastfood['Area'] == borough)].head(1)['2003']))*100-100))+'%',
+            )
+
+            if int(dates[1]) > 2008:
+                if int(dates[1]) not in no_air_vals:
+                    fig_col2.metric(
+                        label="PM25 emmissions (tonnes) vs 2008",
+                        value=round(float(air_pollution[df_str].loc[(air_pollution[df_str]['Area'] == str(borough))]['PM25']),1),
+                        delta=str(round((float(air_pollution[df_str].loc[air_pollution[df_str]['Area'] == str(borough)]['PM25']) / float(air_pollution['df_2008'].loc[air_pollution['df_2008']['Area'] == str(borough)]['PM25']))*100-100))+'%',
+                    )
+
+
+    with tab2:
+        # Multiple Linear Regression
+        # Get values for all attributes 2003-2019
+        regression_df = borough_df.iloc[0:17]
+
+        # Air Pollution values incomplete (contain nan values), calculate regression coefficient separately
+        # Get Air Pollution independant variable
+        regression_airp_x_df = regression_df.drop(['Date', 'Emergency Admissions/100', 'ACSC Admissions/10', 'Number of Takeaways'], axis=1)
+        # Drop rows with nan values
+        regression_airp_x_df = regression_airp_x_df.drop([0,1,2,3,4,6,8,11,14,15], axis=0)
+        # Convert dataframe to numpy array
+        airp_x = regression_airp_x_df.to_numpy()
+
+        # Each element in y is e_admissions value for a year
+        # Get dependent emergency admission variable
+        regression_airp_y_df = regression_df.filter(['Emergency Admissions/100'], axis=1)
+        # Drop rows with nan values
+        regression_airp_y_df = regression_airp_y_df.drop([0,1,2,3,4,6,8,11,14,15], axis=0)
+        # Convert dataframe to numpy array
+        airp_y = regression_airp_y_df.to_numpy()
+
+        # Fit model
+        airp_model = LinearRegression().fit(airp_x, airp_y)
+        # Use model to look at relationships between independent variables and emergency admissions
+        # model.coef_ to get variable weights
+        airp_coefficient = airp_model.coef_.tolist()
+        airp_weight = 0
+        for x in airp_coefficient:
+            for y in x:
+                airp_weight = y
+
+        # Each element in x is the values of the independent variables for a year (all variables except date, emergency admissions and air pollution)
+        # Get independent variables by borough_df
+        regression_x_df = regression_df.drop(['Date', 'Emergency Admissions/100', 'PM2.5 Particulate Emissions (tonnes/year)'], axis=1)
+        # Convert dataframe to numpy array
+        x = regression_x_df.to_numpy()
+
+        # Each element in y is e_admissions value for a year
+        # Get dependent emergency admission variable
+        regression_y_df = regression_df.filter(['Emergency Admissions/100'], axis=1)
+        # Convert dataframe to numpy array
+        y = regression_y_df.to_numpy()
+
+        # Fit model
+        model = LinearRegression().fit(x, y)
+
+        # Use model to look at relationships between independent variables and emergency admissions
+        # model.coef_ to get variable weights
+        coefficients = model.coef_.tolist()
+        weights = []
+        for x in coefficients:
+            for y in x:
+                weights.append(y)
+        weights.append(airp_weight)
+
+        radar_df = pd.DataFrame(dict(
+            r=weights,
+            theta=['ACSC Admissions', 'Fast Food Prevalence', 'Air Pollution']))
+        fig = px.line_polar(radar_df, r='r', theta='theta', line_close=True, range_r=[0,1], width=800, height=600)
+        fig.update_traces(fill='toself')
+        fig.update_polars(bgcolor='white')
+        fig.update_layout(polar_angularaxis_gridcolor="black")
+        fig.update_layout(
+            font=dict(
+                family="Arial",
+                size=22,
+            )
         )
-        line_plot = line_plot.altair_chart(line)
-
+        st.markdown('##')
+        st.markdown("### Linear Regression Relationship Weights")
+        st.markdown('##')
+        st.plotly_chart(fig, theme="None", use_container_width=True)
 
 
 
