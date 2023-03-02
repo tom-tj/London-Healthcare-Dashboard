@@ -1,0 +1,27 @@
+,,,,,,,,,,,,,,,,,,
+,Title:,Monthly Hospital Activity,,,,,,,,,,,,,,,,
+,Summary:,Monthly activity data relating to elective and non-elective inpatient admissions (FFCEs) and outpatient referrals and attendances for first consultant outpatient appointments.,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
+,Period:,June 2012,,,,,,,,,,,,,,,,
+,Source:,Department of Health: Monthly Activity Return,,,,,,,,,,,,,,,,
+,Basis:,Commissioner,,,,,,,,,,,,,,,,
+,Published:,10th August 2012,,,,,,,,,,,,,,,,
+,Revised:,12th July 2013,,,,,,,,,,,,,,,,
+,Status:,Revised,,,,,,,,,,,,,,,,
+,Contact:,Kim Anderson - Unify2@dh.gsi.gov.uk,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
+,SHA Level Data,,,,,,,,,,,,,,,,,
+,Year,Period,SHA Code,SHA Name,Elective G&A Ordinary Admissions (FFCEs),Elective G&A Daycase Admissions (FFCEs),Elective G&A Total Admissions (FFCEs),Elective G&A Planned Ordinary Admissions (FFCEs),Elective G&A Planned Daycase Admissions (FFCEs),Elective G&A Planned Total Admissions (FFCEs),Elective G&A Admissions (FFCEs) -NHS Treatment Centres (TCs) ,Total Non-elective G&A Admissions (FFCEs),GP Referrals Made (All specialties) ,GP Referrals Seen (All specialties) ,GP Referrals Made (G&A) ,GP Referrals Seen (G&A) ,Other Referrals Made (G&A) ,All 1st Outpatient Attendances (G&A) 
+,2012-13,JUNE,,England,"120,921","458,547","579,468","18,901","144,293","163,194","18,065","449,088","909,550","723,292","870,397","688,893","525,328","1,219,887"
+,,,,,,,,,,,,,,,,,,
+,2012-13,JUNE,Q30,NORTH EAST STRATEGIC HEALTH AUTHORITY,"7,090","29,833","36,923","1,090","10,312","11,402","1,644","26,700","46,663","37,348","45,340","36,344","32,152","68,854"
+,2012-13,JUNE,Q31,NORTH WEST STRATEGIC HEALTH AUTHORITY,"17,821","67,037","84,858","2,782","18,977","21,759","3,193","69,470","129,721","104,499","125,773","101,336","79,652","180,259"
+,2012-13,JUNE,Q32,YORKSHIRE AND THE HUMBER STRATEGIC HEALTH AUTHORITY,"12,261","49,344","61,605","2,121","16,061","18,182",618,"47,421","89,395","71,560","87,076","68,976","50,623","122,631"
+,2012-13,JUNE,Q33,EAST MIDLANDS STRATEGIC HEALTH AUTHORITY,"9,669","37,965","47,634","1,241","13,755","14,996",468,"38,171","65,196","54,406","63,569","53,029","33,359","85,181"
+,2012-13,JUNE,Q34,WEST MIDLANDS STRATEGIC HEALTH AUTHORITY,"12,316","48,886","61,202","2,056","17,009","19,065","3,137","49,050","99,613","78,953","92,942","71,323","59,467","126,744"
+,2012-13,JUNE,Q35,EAST OF ENGLAND STRATEGIC HEALTH AUTHORITY,"13,022","48,412","61,434","1,972","15,426","17,398","1,739","43,172","97,297","79,912","93,789","76,786","53,780","129,016"
+,2012-13,JUNE,Q36,LONDON STRATEGIC HEALTH AUTHORITY,"14,524","59,985","74,509","1,911","15,532","17,443","2,444","63,868","157,999","117,355","143,796","107,677","90,229","203,438"
+,2012-13,JUNE,Q37,SOUTH EAST COAST STRATEGIC HEALTH AUTHORITY,"10,969","36,121","47,090","2,089","10,801","12,890","1,106","35,367","74,044","58,364","71,234","55,869","44,478","98,853"
+,2012-13,JUNE,Q38,SOUTH CENTRAL STRATEGIC HEALTH AUTHORITY,"7,937","28,776","36,713","1,076","7,366","8,442","2,928","30,097","62,682","48,139","61,183","45,961","34,121","79,845"
+,2012-13,JUNE,Q39,SOUTH WEST STRATEGIC HEALTH AUTHORITY,"12,638","48,606","61,244","1,883","16,749","18,632",748,"43,365","85,560","70,311","84,319","69,155","44,721","118,349"
+,2012-13,JUNE,YDD82,NATIONAL COMMISSIONING GROUP,"2,674","3,582","6,256",680,"2,305","2,985",40,"2,407","1,380","2,445","1,376","2,437","2,746","6,717"

@@ -1,5 +1,7 @@
 from sklearn.linear_model import LinearRegression
+from scipy import stats
 from streamlit_folium import st_folium
+from statsmodels.tsa.seasonal import seasonal_decompose
 import folium
 import altair as alt
 import matplotlib.pyplot as plt
@@ -103,6 +105,8 @@ def emergency_admissions_data():
             e_admissions[df_str] = e_admissions[df_str].drop(e_admissions[df_str].tail(12).index)
             # Rename Emergency Admissions Column
             e_admissions[df_str] = e_admissions[df_str].rename({'Number of Admission Continuous Inpatient Spells - Numerator.1': 'EmergencyAdmissions'}, axis=1)
+            # Reformat Emergency Admissions column to integer
+            e_admissions[df_str]['EmergencyAdmissions'] = e_admissions[df_str]['EmergencyAdmissions'].apply(lambda x: int(x))
         else:
             # Drop unnecessary columns
             e_admissions[df_str] = e_admissions[df_str].drop(e_admissions[df_str].columns[[0,2,4,5,6,7,8,9]], axis=1)
@@ -174,7 +178,296 @@ def emergency_admissions_data():
         df_str = 'df_' + str(i)
         e_admissions[df_str] = e_admissions[df_str].reset_index(drop=True)    
 
+
     return e_admissions
+
+
+
+
+# --------------------------------------------------
+# Monthly Emergency Admissions Datasets
+# --------------------------------------------------
+@st.cache
+def monthly_emergency_admissions_data():
+    monthly_admissions = {}
+    monthly_admissions['df_JANUARY_2009'] = pd.read_csv('Data/MonthlyE-Admissions/January2009.csv')
+    monthly_admissions['df_JANUARY_2010'] = pd.read_csv('Data/MonthlyE-Admissions/January2010.csv')
+    monthly_admissions['df_JANUARY_2011'] = pd.read_csv('Data/MonthlyE-Admissions/January2011.csv')
+    monthly_admissions['df_JANUARY_2012'] = pd.read_csv('Data/MonthlyE-Admissions/January2012.csv')
+    monthly_admissions['df_JANUARY_2013'] = pd.read_csv('Data/MonthlyE-Admissions/January2013.csv')
+    monthly_admissions['df_JANUARY_2020'] = pd.read_csv('Data/MonthlyE-Admissions/January2020.csv')
+    monthly_admissions['df_JANUARY_2021'] = pd.read_csv('Data/MonthlyE-Admissions/January2021.csv')
+    monthly_admissions['df_JANUARY_2022'] = pd.read_csv('Data/MonthlyE-Admissions/January2022.csv')
+    monthly_admissions['df_JANUARY_2023'] = pd.read_csv('Data/MonthlyE-Admissions/January2023.csv')
+
+    monthly_admissions['df_FEBRUARY_2009'] = pd.read_csv('Data/MonthlyE-Admissions/February2009.csv')
+    monthly_admissions['df_FEBRUARY_2010'] = pd.read_csv('Data/MonthlyE-Admissions/February2010.csv')
+    monthly_admissions['df_FEBRUARY_2011'] = pd.read_csv('Data/MonthlyE-Admissions/February2011.csv')
+    monthly_admissions['df_FEBRUARY_2012'] = pd.read_csv('Data/MonthlyE-Admissions/February2012.csv')
+    monthly_admissions['df_FEBRUARY_2013'] = pd.read_csv('Data/MonthlyE-Admissions/February2013.csv')
+    monthly_admissions['df_FEBRUARY_2020'] = pd.read_csv('Data/MonthlyE-Admissions/February2020.csv')
+    monthly_admissions['df_FEBRUARY_2021'] = pd.read_csv('Data/MonthlyE-Admissions/February2021.csv')
+    monthly_admissions['df_FEBRUARY_2022'] = pd.read_csv('Data/MonthlyE-Admissions/February2022.csv')
+
+    monthly_admissions['df_MARCH_2009'] = pd.read_csv('Data/MonthlyE-Admissions/March2009.csv')
+    monthly_admissions['df_MARCH_2010'] = pd.read_csv('Data/MonthlyE-Admissions/March2010.csv')
+    monthly_admissions['df_MARCH_2011'] = pd.read_csv('Data/MonthlyE-Admissions/March2011.csv')
+    monthly_admissions['df_MARCH_2012'] = pd.read_csv('Data/MonthlyE-Admissions/March2012.csv')
+    monthly_admissions['df_MARCH_2013'] = pd.read_csv('Data/MonthlyE-Admissions/March2013.csv')
+    monthly_admissions['df_MARCH_2020'] = pd.read_csv('Data/MonthlyE-Admissions/March2020.csv')
+    monthly_admissions['df_MARCH_2021'] = pd.read_csv('Data/MonthlyE-Admissions/March2021.csv')
+    monthly_admissions['df_MARCH_2022'] = pd.read_csv('Data/MonthlyE-Admissions/March2022.csv')
+
+    monthly_admissions['df_APRIL_2008'] = pd.read_csv('Data/MonthlyE-Admissions/April2008.csv')
+    monthly_admissions['df_APRIL_2009'] = pd.read_csv('Data/MonthlyE-Admissions/April2009.csv')
+    monthly_admissions['df_APRIL_2010'] = pd.read_csv('Data/MonthlyE-Admissions/April2010.csv')
+    monthly_admissions['df_APRIL_2011'] = pd.read_csv('Data/MonthlyE-Admissions/April2011.csv')
+    monthly_admissions['df_APRIL_2012'] = pd.read_csv('Data/MonthlyE-Admissions/April2012.csv')
+    monthly_admissions['df_APRIL_2020'] = pd.read_csv('Data/MonthlyE-Admissions/April2020.csv')
+    monthly_admissions['df_APRIL_2021'] = pd.read_csv('Data/MonthlyE-Admissions/April2021.csv')
+    monthly_admissions['df_APRIL_2022'] = pd.read_csv('Data/MonthlyE-Admissions/April2022.csv')
+
+    monthly_admissions['df_MAY_2008'] = pd.read_csv('Data/MonthlyE-Admissions/May2008.csv')
+    monthly_admissions['df_MAY_2009'] = pd.read_csv('Data/MonthlyE-Admissions/May2009.csv')
+    monthly_admissions['df_MAY_2010'] = pd.read_csv('Data/MonthlyE-Admissions/May2010.csv')
+    monthly_admissions['df_MAY_2011'] = pd.read_csv('Data/MonthlyE-Admissions/May2011.csv')
+    monthly_admissions['df_MAY_2012'] = pd.read_csv('Data/MonthlyE-Admissions/May2012.csv')
+    monthly_admissions['df_MAY_2020'] = pd.read_csv('Data/MonthlyE-Admissions/May2020.csv')
+    monthly_admissions['df_MAY_2021'] = pd.read_csv('Data/MonthlyE-Admissions/May2021.csv')
+    monthly_admissions['df_MAY_2022'] = pd.read_csv('Data/MonthlyE-Admissions/May2022.csv')
+
+    monthly_admissions['df_JUNE_2008'] = pd.read_csv('Data/MonthlyE-Admissions/June2008.csv')
+    monthly_admissions['df_JUNE_2009'] = pd.read_csv('Data/MonthlyE-Admissions/June2009.csv')
+    monthly_admissions['df_JUNE_2010'] = pd.read_csv('Data/MonthlyE-Admissions/June2010.csv')
+    monthly_admissions['df_JUNE_2011'] = pd.read_csv('Data/MonthlyE-Admissions/June2011.csv')
+    monthly_admissions['df_JUNE_2012'] = pd.read_csv('Data/MonthlyE-Admissions/June2012.csv')
+    monthly_admissions['df_JUNE_2020'] = pd.read_csv('Data/MonthlyE-Admissions/June2020.csv')
+    monthly_admissions['df_JUNE_2021'] = pd.read_csv('Data/MonthlyE-Admissions/June2021.csv')
+    monthly_admissions['df_JUNE_2022'] = pd.read_csv('Data/MonthlyE-Admissions/June2022.csv')
+
+    monthly_admissions['df_JULY_2008'] = pd.read_csv('Data/MonthlyE-Admissions/July2008.csv')
+    monthly_admissions['df_JULY_2009'] = pd.read_csv('Data/MonthlyE-Admissions/July2009.csv')
+    monthly_admissions['df_JULY_2010'] = pd.read_csv('Data/MonthlyE-Admissions/July2010.csv')
+    monthly_admissions['df_JULY_2011'] = pd.read_csv('Data/MonthlyE-Admissions/July2011.csv')
+    monthly_admissions['df_JULY_2012'] = pd.read_csv('Data/MonthlyE-Admissions/July2012.csv')
+    monthly_admissions['df_JULY_2020'] = pd.read_csv('Data/MonthlyE-Admissions/July2020.csv')
+    monthly_admissions['df_JULY_2021'] = pd.read_csv('Data/MonthlyE-Admissions/July2021.csv')
+    monthly_admissions['df_JULY_2022'] = pd.read_csv('Data/MonthlyE-Admissions/July2022.csv')
+
+    monthly_admissions['df_AUGUST_2008'] = pd.read_csv('Data/MonthlyE-Admissions/August2008.csv')
+    monthly_admissions['df_AUGUST_2009'] = pd.read_csv('Data/MonthlyE-Admissions/August2009.csv')
+    monthly_admissions['df_AUGUST_2010'] = pd.read_csv('Data/MonthlyE-Admissions/August2010.csv')
+    monthly_admissions['df_AUGUST_2011'] = pd.read_csv('Data/MonthlyE-Admissions/August2011.csv')
+    monthly_admissions['df_AUGUST_2012'] = pd.read_csv('Data/MonthlyE-Admissions/August2012.csv')
+    monthly_admissions['df_AUGUST_2020'] = pd.read_csv('Data/MonthlyE-Admissions/August2020.csv')
+    monthly_admissions['df_AUGUST_2021'] = pd.read_csv('Data/MonthlyE-Admissions/August2021.csv')
+    monthly_admissions['df_AUGUST_2022'] = pd.read_csv('Data/MonthlyE-Admissions/August2022.csv')
+
+    monthly_admissions['df_SEPTEMBER_2008'] = pd.read_csv('Data/MonthlyE-Admissions/September2008.csv')
+    monthly_admissions['df_SEPTEMBER_2009'] = pd.read_csv('Data/MonthlyE-Admissions/September2009.csv')
+    monthly_admissions['df_SEPTEMBER_2010'] = pd.read_csv('Data/MonthlyE-Admissions/September2010.csv')
+    monthly_admissions['df_SEPTEMBER_2011'] = pd.read_csv('Data/MonthlyE-Admissions/September2011.csv')
+    monthly_admissions['df_SEPTEMBER_2012'] = pd.read_csv('Data/MonthlyE-Admissions/September2012.csv')
+    monthly_admissions['df_SEPTEMBER_2020'] = pd.read_csv('Data/MonthlyE-Admissions/September2020.csv')
+    monthly_admissions['df_SEPTEMBER_2021'] = pd.read_csv('Data/MonthlyE-Admissions/September2021.csv')
+    monthly_admissions['df_SEPTEMBER_2022'] = pd.read_csv('Data/MonthlyE-Admissions/September2022.csv')
+
+    monthly_admissions['df_OCTOBER_2008'] = pd.read_csv('Data/MonthlyE-Admissions/October2008.csv')
+    monthly_admissions['df_OCTOBER_2009'] = pd.read_csv('Data/MonthlyE-Admissions/October2009.csv')
+    monthly_admissions['df_OCTOBER_2010'] = pd.read_csv('Data/MonthlyE-Admissions/October2010.csv')
+    monthly_admissions['df_OCTOBER_2011'] = pd.read_csv('Data/MonthlyE-Admissions/October2011.csv')
+    monthly_admissions['df_OCTOBER_2012'] = pd.read_csv('Data/MonthlyE-Admissions/October2012.csv')
+    monthly_admissions['df_OCTOBER_2020'] = pd.read_csv('Data/MonthlyE-Admissions/October2020.csv')
+    monthly_admissions['df_OCTOBER_2021'] = pd.read_csv('Data/MonthlyE-Admissions/October2021.csv')
+    monthly_admissions['df_OCTOBER_2022'] = pd.read_csv('Data/MonthlyE-Admissions/October2022.csv')
+
+    monthly_admissions['df_NOVEMBER_2008'] = pd.read_csv('Data/MonthlyE-Admissions/November2008.csv')
+    monthly_admissions['df_NOVEMBER_2009'] = pd.read_csv('Data/MonthlyE-Admissions/November2009.csv')
+    monthly_admissions['df_NOVEMBER_2010'] = pd.read_csv('Data/MonthlyE-Admissions/November2010.csv')
+    monthly_admissions['df_NOVEMBER_2011'] = pd.read_csv('Data/MonthlyE-Admissions/November2011.csv')
+    monthly_admissions['df_NOVEMBER_2012'] = pd.read_csv('Data/MonthlyE-Admissions/November2012.csv')
+    monthly_admissions['df_NOVEMBER_2020'] = pd.read_csv('Data/MonthlyE-Admissions/November2020.csv')
+    monthly_admissions['df_NOVEMBER_2021'] = pd.read_csv('Data/MonthlyE-Admissions/November2021.csv')
+    monthly_admissions['df_NOVEMBER_2022'] = pd.read_csv('Data/MonthlyE-Admissions/November2022.csv')
+
+    monthly_admissions['df_DECEMBER_2008'] = pd.read_csv('Data/MonthlyE-Admissions/December2008.csv')
+    monthly_admissions['df_DECEMBER_2009'] = pd.read_csv('Data/MonthlyE-Admissions/December2009.csv')
+    monthly_admissions['df_DECEMBER_2010'] = pd.read_csv('Data/MonthlyE-Admissions/December2010.csv')
+    monthly_admissions['df_DECEMBER_2011'] = pd.read_csv('Data/MonthlyE-Admissions/December2011.csv')
+    monthly_admissions['df_DECEMBER_2012'] = pd.read_csv('Data/MonthlyE-Admissions/December2012.csv')
+    monthly_admissions['df_DECEMBER_2020'] = pd.read_csv('Data/MonthlyE-Admissions/December2020.csv')
+    monthly_admissions['df_DECEMBER_2021'] = pd.read_csv('Data/MonthlyE-Admissions/December2021.csv')
+    monthly_admissions['df_DECEMBER_2022'] = pd.read_csv('Data/MonthlyE-Admissions/December2022.csv')
+
+    monthly_admissions['df_2013'] = pd.read_csv('Data/MonthlyE-Admissions/2013.csv')
+    monthly_admissions['df_2014'] = pd.read_csv('Data/MonthlyE-Admissions/2014.csv')
+    monthly_admissions['df_2015'] = pd.read_csv('Data/MonthlyE-Admissions/2015.csv')
+    monthly_admissions['df_2016'] = pd.read_csv('Data/MonthlyE-Admissions/2016.csv')
+    monthly_admissions['df_2017'] = pd.read_csv('Data/MonthlyE-Admissions/2017.csv')
+    monthly_admissions['df_2018'] = pd.read_csv('Data/MonthlyE-Admissions/2018.csv')
+    monthly_admissions['df_2019'] = pd.read_csv('Data/MonthlyE-Admissions/2019.csv')
+
+    months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+
+    # Transform 2013-2015 dataframes
+    for i in range(2013,2016):
+        df_str = 'df_' + str(i)
+        # Drop all rows not under London Commissioning Region
+        monthly_admissions[df_str] = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Commissioner Parent Name'] == 'LONDON COMMISSIONING REGION']
+        # Drop unnecessary columns
+        monthly_admissions[df_str] = monthly_admissions[df_str].drop(['Yearnumber', 'Provider Parent org code', 'Provider Org code', 'Provider Org name', 'Commissioner Parent Org Code', 'Commissioner Parent Name', 'Commissioner Org Code', 'A209 Ip Elect Ord SUM', 'A209 Ip Elect Day SUM', 'A209 Ip Elect Total SUM', 'A209 Ip Elecord Planned SUM', 'A209 Ip Elecday Planned SUM', 'A209 Ip Electotal Planned SUM', 'A209 Ip Elect Total Tc SUM', 'A262 Op Gprefsmade M SUM', 'A262 Op Gprefsseen M SUM', 'A262 Op Gprefsmade Ga M SUM', 'A262 Op Gprefsseen Ga M SUM', 'A262 Op Otherrefsmade Ga M SUM', 'A262 Op 1statt Ga M SUM', 'Description'], axis=1)
+        monthly_admissions[df_str] = monthly_admissions[df_str].drop(monthly_admissions[df_str].columns[1], axis = 1)
+        # Rename column headers
+        monthly_admissions[df_str] = monthly_admissions[df_str].rename(columns={'Periodname': 'Period', 'Commissioner Org Name': 'Commissioner', 'A209 Ip Nonelect SUM': 'EmergencyAdmissions'})
+        # Reformat 'Period' column to uppercase
+        monthly_admissions[df_str]['Period'] = monthly_admissions[df_str]['Period'].str.upper()
+        # Reformat 'Period' column to format 'month-year'
+        monthly_admissions[df_str]['Period'] = monthly_admissions[df_str]['Period'] + '-' + str(i)
+        monthly_admissions[df_str].loc[monthly_admissions[df_str]['Period'] == ('JANUARY' + '-' + str(i)), 'Period'] = ('JANUARY' + '-'+ str(i+1))
+        monthly_admissions[df_str].loc[monthly_admissions[df_str]['Period'] == ('FEBRUARY' + '-' + str(i)), 'Period'] = ('FEBRUARY' + '-'+ str(i+1))
+        monthly_admissions[df_str].loc[monthly_admissions[df_str]['Period'] == ('MARCH' + '-' + str(i)), 'Period'] = ('MARCH' + '-'+ str(i+1))
+
+    # Transform 2016 dataframe
+    # Drop all rows not under London Commissioning Region
+    monthly_admissions['df_2016'] = monthly_admissions['df_2016'].loc[monthly_admissions['df_2016']['Commissioner Parent Org Code'] == 'Q71']
+    # Drop unnecessary columns
+    monthly_admissions['df_2016'] = monthly_admissions['df_2016'].drop(['Yearnumber', 'Provider Parent org code', 'Provider Org code', 'Provider Org name', 'Commissioner Parent Org Code', 'Commissioner Parent Name', 'Commissioner Org Code', 'Ip Elect Ord', 'Ip Elect Day', 'Ip Elect Total', 'Ip Elecord Planned', 'Ip Elecday Planned', 'Ip Electotal Planned', 'Ip Elect Total Tc', 'Op Gprefsmade M', 'Op Gprefsseen M', 'Op Gprefsmade Ga M', 'Op Gprefsseen Ga M', 'Op Otherrefsmade Ga M', 'Op 1statt Ga M'], axis=1)
+    monthly_admissions['df_2016'] = monthly_admissions['df_2016'].drop(monthly_admissions['df_2016'].columns[1], axis = 1)
+    # Rename column headers
+    monthly_admissions['df_2016'] = monthly_admissions['df_2016'].rename(columns={'Periodname': 'Period', 'Commissioner Org Name': 'Commissioner', 'Ip Nonelect': 'EmergencyAdmissions'})
+    # Reformat 'Period' column to uppercase
+    monthly_admissions['df_2016']['Period'] = monthly_admissions['df_2016']['Period'].str.upper()
+    # Reformat 'Period' column to format 'month-year'
+    monthly_admissions['df_2016']['Period'] = monthly_admissions['df_2016']['Period'] + '-2016'
+    monthly_admissions['df_2016'].loc[monthly_admissions['df_2016']['Period'] == ('JANUARY' + '-2016'), 'Period'] = ('JANUARY' + '-2017')
+    monthly_admissions['df_2016'].loc[monthly_admissions['df_2016']['Period'] == ('FEBRUARY' + '-2016'), 'Period'] = ('FEBRUARY' + '-2017')
+    monthly_admissions['df_2016'].loc[monthly_admissions['df_2016']['Period'] == ('MARCH' + '-2016'), 'Period'] = ('MARCH' + '-2017')
+
+    # Transform 2017-2019 dataframes
+    for i in range(2017,2020):
+        df_str = 'df_' + str(i)
+        # Drop all rows not under London Commissioning Region
+        monthly_admissions[df_str] = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Commissioner Parent Org Code'] == 'Q71']
+        # Drop unnecessary columns
+        monthly_admissions[df_str] = monthly_admissions[df_str].drop(['Provider Parent org code', 'Provider Org code', 'Provider Org name', 'Commissioner Parent Org Code', 'Commissioner Org Code', 'Ip Elect Ord', 'Ip Elect Day', 'Ip Elect Total', 'Ip Elecord Planned', 'Ip Elecday Planned', 'Ip Electotal Planned', 'Ip Elect Total Tc', 'Op Gprefsmade M', 'Op Gprefsseen M', 'Op Gprefsmade Ga M', 'Op Gprefsseen Ga M', 'Op Otherrefsmade Ga M', 'Op 1statt Ga M'], axis=1)
+        monthly_admissions[df_str] = monthly_admissions[df_str].drop(monthly_admissions[df_str].columns[1], axis = 1)
+        # Rename column headers
+        monthly_admissions[df_str] = monthly_admissions[df_str].rename(columns={'Periodname': 'Period', 'Commissioner Org Name': 'Commissioner', 'Ip Nonelect': 'EmergencyAdmissions'})
+        # Reformat 'Period' column to uppercase
+        monthly_admissions[df_str]['Period'] = monthly_admissions[df_str]['Period'].str.upper()
+        # Reformat 'Period' column to format 'month-year'
+        monthly_admissions[df_str]['Period'] = monthly_admissions[df_str]['Period'].str[4:]
+
+    # Transform 2020-2023 dataframes
+    for i in range(2020, 2024):
+        for month in months:
+            # No more data past Jan 2023
+            if i == 2023 and month != 'JANUARY':
+                break
+            df_str = 'df_' + str(month) + '_' + str(i)
+            # Combine/sum column values for 'Emergency admissions via A&E - Type 1', 'Emergency admissions via A&E - Type 2', 'Emergency admissions via A&E - Other A&E department', 'Other emergency admissions' columns
+            monthly_admissions[df_str]['Other emergency admissions'] = monthly_admissions[df_str]['Other emergency admissions'] + monthly_admissions[df_str]['Emergency admissions via A&E - Type 1'] + monthly_admissions[df_str]['Emergency admissions via A&E - Type 2'] + monthly_admissions[df_str]['Emergency admissions via A&E - Other A&E department']
+            # Drop unnecessary columns
+            monthly_admissions[df_str] = monthly_admissions[df_str].drop(monthly_admissions[df_str].columns[[1,3,4,5,6,7,8,9,10,11,12,13,14]], axis=1)
+            # Rename column headers
+            monthly_admissions[df_str] = monthly_admissions[df_str].rename(columns={'Other emergency admissions': 'EmergencyAdmissions'})
+
+    # Create new dataframe holding dates and total admissions
+    newdf = pd.DataFrame(columns=['Date', 'EmergencyAdmissions'])
+
+    # Add monthly admissions from 2008
+    for month in months:
+        if month == 'JANUARY' or month == 'FEBRUARY' or month == 'MARCH':
+            continue
+        df_str = 'df_' + str(month) + '_2008'
+        date_str = str(month) + '-2008'
+        london_admissions = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Org Name'] == 'LONDON STRATEGIC HEALTH AUTHORITY', 'Total Non-elective G&A Admissions (FFCEs)'].sum()
+        newdf.loc[len(newdf)] = [date_str, london_admissions]
+
+    # Add monthly admissions from 2009-2011
+    for year in range(2009,2012):
+        for month in months:
+            df_str = 'df_' + str(month) + '_' + str(year)
+            date_str = str(month) + '-' + str(year)
+            london_admissions = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Org Name'] == 'LONDON STRATEGIC HEALTH AUTHORITY', 'Total Non-elective G&A Admissions (FFCEs)'].sum()
+            newdf.loc[len(newdf)] = [date_str, london_admissions]
+
+    # Add monthly admissions for Jan 2012 - Mar 2012
+    for month in months:
+        if month == 'JANUARY' or month == 'FEBRUARY' or month == 'MARCH':
+            df_str = 'df_' + str(month) + '_2012'
+            date_str = str(month) + '-2012'
+            london_admissions = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Org Name'] == 'LONDON STRATEGIC HEALTH AUTHORITY', 'Total Non-elective G&A Admissions (FFCEs)'].sum()
+            newdf.loc[len(newdf)] = [date_str, london_admissions]
+
+    # Add monthly admissions for Apr 2012 - Mar 2013
+    for month in months:
+        if month == 'JANUARY' or month == 'FEBRUARY' or month == 'MARCH':
+            df_str = 'df_' + str(month) + '_2013'
+            date_str = str(month) + '-2013'
+        else:
+            df_str = 'df_' + str(month) + '_2012'
+            date_str = str(month) + '-2012'
+        london_admissions = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Unnamed: 4'] == 'LONDON STRATEGIC HEALTH AUTHORITY', 'Unnamed: 12'].sum()
+        newdf.loc[len(newdf)] = [date_str, london_admissions]
+
+    # Add monthly admissions from 2013-2015
+    for i in range (2013,2016):
+        df_str = 'df_' + str(i)
+        for month in months:
+            if month == 'JANUARY' or month == 'FEBRUARY' or month == 'MARCH':
+                month_str = month + '-' + str(i+1)
+            else:
+                month_str = month + '-' + str(i)
+            london_admissions = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Period'] == month_str, 'EmergencyAdmissions'].sum()
+            newdf.loc[len(newdf)] = [month_str, london_admissions]
+
+    # Add monthly admissions from 2016
+    for month in months:
+        if month == 'JANUARY' or month == 'FEBRUARY' or month == 'MARCH':
+            month_str = month + '-2017'
+        else:
+            month_str = month + '-2016'
+        london_admissions = monthly_admissions['df_2016'].loc[monthly_admissions['df_2016']['Period'] == month_str, 'EmergencyAdmissions'].sum()
+        newdf.loc[len(newdf)] = [month_str, london_admissions]
+
+    # Add monthly admissions from 2017-2019
+    for i in range (2017,2020):
+        df_str = 'df_' + str(i)
+        for month in months:
+            if month == 'JANUARY' or month == 'FEBRUARY' or month == 'MARCH':
+                month_str = month + '-' + str(i+1)
+            else:
+                month_str = month + '-' + str(i)
+            london_admissions = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Period'] == month_str, 'EmergencyAdmissions'].sum()
+            newdf.loc[len(newdf)] = [month_str, london_admissions]
+
+    # Add monthly admissions from 2020-2023
+    for year in range(2020,2024):
+        for month in months:
+            # No more data past Jan 2023
+            if year == 2023 and month != 'JANUARY':
+                break
+            df_str = 'df_' + str(month) + '_' + str(year)
+            date_str = str(month) + '-' + str(year)
+            london_admissions = monthly_admissions[df_str].loc[monthly_admissions[df_str]['Parent Org'] == 'NHS ENGLAND LONDON', 'EmergencyAdmissions'].sum()
+            newdf.loc[len(newdf)] = [date_str, london_admissions]
+
+
+    # Reformat 'Date' column to 'datetime'
+    newdf['Date'] = pd.to_datetime(newdf['Date'])
+    # Sort dataframe by 'Date
+    newdf = newdf.sort_values(by=['Date'])
+    # Reformat 'EmergencyAdmissions' column to integer
+    newdf = newdf.replace(',', '', regex=True)
+    # Remove rows for which value is 0 (empty rows)
+    newdf = newdf[newdf.EmergencyAdmissions != 0]
+    newdf['EmergencyAdmissions'] = newdf['EmergencyAdmissions'].apply(lambda x: int(x))
+    # Reset dataframe index
+    newdf = newdf.reset_index(drop=True)
+
+
+    return newdf
 
 
 
@@ -197,6 +490,7 @@ def acsc_admissions_data():
 
     # Cover edge cases where value 0 is indicated by '*'
     df_acsc['Observed'] = df_acsc['Observed'].str.replace('*', '0')
+
 
     return df_acsc
 
@@ -261,6 +555,8 @@ def air_pollution_data():
     air_pollution['df_2008'].loc[air_pollution['df_2008']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2008'].loc[air_pollution['df_2008']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2008'].loc[air_pollution['df_2008']['Area'] == 'City', 'Area'] = 'City of London'
+    # drop unnecessary columns
+    air_pollution['df_2008'] = air_pollution['df_2008'][['Area', 'PM25']]
 
     air_pollution['df_2010'] = pd.read_csv('Data/AirPollution/Road 2010 - Total-Table 1.csv', dtype=str, keep_default_na=False)
     air_pollution['df_2010_other'] = pd.read_csv('Data/AirPollution/PM25NRMM:Agriculture2010.csv', dtype=str, keep_default_na=False)
@@ -285,6 +581,8 @@ def air_pollution_data():
     air_pollution['df_2010'].loc[air_pollution['df_2010']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2010'].loc[air_pollution['df_2010']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2010'].loc[air_pollution['df_2010']['Area'] == 'City', 'Area'] = 'City of London'
+    # drop unnecessary columns
+    air_pollution['df_2010'] = air_pollution['df_2010'][['Area', 'PM25']]
 
     air_pollution['df_2012'] = pd.read_csv('Data/AirPollution/Road 2012 - Total-Table 1.csv', dtype=str, keep_default_na=False)
     air_pollution['df_2012_other'] = pd.read_csv('Data/AirPollution/PM25NRMM:Agriculture2012.csv', dtype=str, keep_default_na=False)
@@ -309,6 +607,8 @@ def air_pollution_data():
     air_pollution['df_2012'].loc[air_pollution['df_2012']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2012'].loc[air_pollution['df_2012']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2012'].loc[air_pollution['df_2012']['Area'] == 'City', 'Area'] = 'City of London'
+    # drop unnecessary columns
+    air_pollution['df_2012'] = air_pollution['df_2012'][['Area', 'PM25']]
 
     air_pollution['df_2013'] = pd.read_csv('Data/AirPollution/PM2.5 Totals by Borough2013.csv', dtype=str, keep_default_na=False)
     air_pollution['df_2013'] = air_pollution['df_2013'].rename({'PM2.5 Pivot Table by Borough': 'Area', 'Unnamed: 13': 'PM25'}, axis='columns')
@@ -318,6 +618,8 @@ def air_pollution_data():
     air_pollution['df_2013'].loc[air_pollution['df_2013']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2013'].loc[air_pollution['df_2013']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2013'].loc[air_pollution['df_2013']['Area'] == 'City', 'Area'] = 'City of London'
+    # drop unnecessary columns
+    air_pollution['df_2013'] = air_pollution['df_2013'][['Area', 'PM25']]
 
     air_pollution['df_2015'] = pd.read_csv('Data/AirPollution/Road 2015 - Total-Table 1.csv', dtype=str, keep_default_na=False)
     air_pollution['df_2015_other'] = pd.read_csv('Data/AirPollution/PM25NRMM:Agriculture2015.csv', dtype=str, keep_default_na=False)
@@ -342,6 +644,8 @@ def air_pollution_data():
     air_pollution['df_2015'].loc[air_pollution['df_2015']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2015'].loc[air_pollution['df_2015']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2015'].loc[air_pollution['df_2015']['Area'] == 'City', 'Area'] = 'City of London'
+    # drop unnecessary columns
+    air_pollution['df_2015'] = air_pollution['df_2015'][['Area', 'PM25']]
 
     air_pollution['df_2016'] = pd.read_csv('Data/AirPollution/PM2.5 Summary2016.csv', dtype=str, keep_default_na=False)
     air_pollution['df_2016'] = air_pollution['df_2016'].transpose()
@@ -352,6 +656,8 @@ def air_pollution_data():
     air_pollution['df_2016'].loc[air_pollution['df_2016']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2016'].loc[air_pollution['df_2016']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2016'].loc[air_pollution['df_2016']['Area'] == 'City', 'Area'] = 'City of London'
+    # drop unnecessary columns
+    air_pollution['df_2016'] = air_pollution['df_2016'][['Area', 'PM25']]
 
     air_pollution['df_2019'] = pd.read_csv('Data/AirPollution/PM2.5 Summary2019.csv', dtype=str, keep_default_na=False)
     air_pollution['df_2019'] = air_pollution['df_2019'].transpose()
@@ -362,6 +668,8 @@ def air_pollution_data():
     air_pollution['df_2019'].loc[air_pollution['df_2019']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2019'].loc[air_pollution['df_2019']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2019'].loc[air_pollution['df_2019']['Area'] == 'City', 'Area'] = 'City of London'
+    # drop unnecessary columns
+    air_pollution['df_2019'] = air_pollution['df_2019'][['Area', 'PM25']]
 
     air_pollution['df_2020'] = pd.read_csv('Data/AirPollution/Road 2020 - Total-Table 1.csv', dtype=str, keep_default_na=False)
     air_pollution['df_2020_other'] = pd.read_csv('Data/AirPollution/PM25NRMM:Agriculture2020.csv', dtype=str, keep_default_na=False)
@@ -386,7 +694,8 @@ def air_pollution_data():
     air_pollution['df_2020'].loc[air_pollution['df_2020']['Area'] == 'Richmond', 'Area'] = 'Richmond upon Thames'
     air_pollution['df_2020'].loc[air_pollution['df_2020']['Area'] == 'Kingston', 'Area'] = 'Kingston upon Thames'
     air_pollution['df_2020'].loc[air_pollution['df_2020']['Area'] == 'City', 'Area'] = 'City of London'
-
+    # drop unnecessary columns
+    air_pollution['df_2020'] = air_pollution['df_2020'][['Area', 'PM25']]
 
 
     return air_pollution
@@ -403,6 +712,7 @@ def intro():
 
     # Get transformed dataframes from streamlit cache
     e_admissions = emergency_admissions_data()
+    monthly_admissions = monthly_emergency_admissions_data()
 
     # Remove whitespace from the top of the page and sidebar
     st.markdown("""
@@ -422,61 +732,114 @@ def intro():
             </style>
             """, unsafe_allow_html=True)
 
-    # Date slider widget
-    year = st.slider('Select a range of values', 2003, 2020, 2003)
-    df_str = 'df_' + str(year)
+    tab1, tab2 = st.tabs(["Geographical", "Time Series"])
 
-    if str(year) == '2020':
-        st.write('*Note: from 2020 onwards NHS "Hospital Admitted Patient Care Activity" groups CCG data for many boroughs together, therefore the data is incomplete at an individual borough level*')
+    with tab1:
+        # Date slider widget
+        year = st.slider('Select a range of values', 2003, 2020, 2003)
+        df_str = 'df_' + str(year)
 
-    map_df = e_admissions[df_str].copy()
-    columnsused = ['Area', 'EmergencyAdmissions']
+        if str(year) == '2020':
+            st.write('*Note: from 2020 onwards NHS "Hospital Admitted Patient Care Activity" groups CCG data for many boroughs together, therefore the data is incomplete at an individual borough level*')
 
-    fig_col1, fig_col2 = st.columns((2,4), gap="large")
+        map_df = e_admissions[df_str].copy()
+        columnsused = ['Area', 'EmergencyAdmissions']
 
-    with fig_col1:
-        new_df = e_admissions[df_str][['Area', 'EmergencyAdmissions']]
-        bars = alt.Chart(new_df).mark_bar(size=16).encode(
-            x=alt.X('EmergencyAdmissions:Q', title=''),
-            y=alt.Y('Area', sort='-x', title='')
+        fig_col1, fig_col2 = st.columns((5,9), gap='large')
+
+        with fig_col1:
+            new_df = e_admissions[df_str][['Area', 'EmergencyAdmissions']]
+            bars = alt.Chart(new_df).mark_bar(size=16).encode(
+                x=alt.X('EmergencyAdmissions:Q', scale=alt.Scale(domain=(0, 45000)),title=''),
+                y=alt.Y('Area', sort='-x', title='')
+            ).properties(
+                width=900,
+                height=850
+            ).configure_axis(
+                grid=False,
+                labelFontSize=16,
+            ).configure_view(
+                strokeWidth=0
+            )
+            st.altair_chart(bars, use_container_width=True)
+
+        with fig_col2:
+            map = folium.Map(location=[51.5, 0], zoom_start=10, tiles='cartodbpositron')
+            choropleth = folium.Choropleth(
+                geo_data = 'Data/london_boroughs.json',
+                data = map_df,
+                columns = columnsused,
+                key_on = 'feature.properties.name',
+                fill_color="PuBu",
+                fill_opacity=0.8,
+                line_opacity = 0.7,
+                highlight=True
+            )
+            choropleth.geojson.add_to(map)
+
+            for feature in choropleth.geojson.data['features']:
+                borough = feature['properties']['name']
+                try:
+                    feature['properties']['area_hectares'] = 'Emergency Admissions: ' + str(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == borough, 'EmergencyAdmissions'].iloc[0])
+                except:
+                    feature['properties']['area_hectares'] = 'Emergency Admissions: n/a'
+            choropleth.geojson.add_child(
+                folium.features.GeoJsonTooltip(fields=['name', 'area_hectares'], labels=False)
+            )
+            st_map = st_folium(map, width=1200, height=750)
+
+            # borough_selected = ''
+            # if st_map['last_active_drawing']:
+            #     borough_selected = st_map['last_active_drawing']['properties']['name']
+            #     # individual_data_suite(borough_selected)
+
+    with tab2:
+        st.markdown('### London Monthly Time Series-Emergency Admissions')
+
+        line = alt.Chart(monthly_admissions.reset_index()).mark_line().encode(
+            x=alt.X('Date',scale=alt.Scale(zero=False)),
+            y=alt.Y('EmergencyAdmissions',scale=alt.Scale(zero=False)),
+        )
+        rule = alt.Chart(
+            pd.DataFrame({
+                'Date': ['2020-02-01'],
+                'color': ['red'],
+                'event': ['Beginning of Covid Epidemic UK']
+            })
+        ).mark_rule(
+            strokeWidth=2,
+            strokeDash=[10, 8]
+        ).encode(
+            x='Date:T',
+            color=alt.Color('color:N', scale=None),
+            tooltip=['event'],
+        )
+        
+        line = alt.layer(
+            line, rule
         ).properties(
-            width=500,
-            height=850
+            height=800
         ).configure_axis(
-            grid=False,
-            labelFontSize=16,
-        ).configure_view(
-            strokeWidth=0
+            grid=False
         )
-        st.altair_chart(bars)
+        line_plot = st.altair_chart(line, use_container_width=True)
 
-    with fig_col2:
-        map = folium.Map(location=[51.5, 0], zoom_start=10, tiles='cartodbpositron')
-        choropleth = folium.Choropleth(
-            geo_data = 'Data/london_boroughs.json',
-            data = map_df,
-            columns = columnsused,
-            key_on = 'feature.properties.name',
-            fill_color="PuBu",
-            fill_opacity=0.8,
-            line_opacity = 0.7,
-            highlight=True
-        )
-        choropleth.geojson.add_to(map)
 
-        for feature in choropleth.geojson.data['features']:
-            borough = feature['properties']['name']
-            feature['properties']['area_hectares'] = 'Emergency Admissions: ' + str(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == borough, 'EmergencyAdmissions'].iloc[0])
-        choropleth.geojson.add_child(
-            folium.features.GeoJsonTooltip(fields=['name', 'area_hectares'], labels=False)
-        )
-        st_map = st_folium(map, width=1200, height=750)
+        st.markdown('###')
+        st.markdown('### Emergency Admissions Seasonality')
+        st.markdown('###')
+        fig_col1, fig_col2 = st.columns((5,3), gap='large')
 
-        # borough_selected = ''
-        # if st_map['last_active_drawing']:
-        #     borough_selected = st_map['last_active_drawing']['properties']['name']
-        #     # individual_data_suite(borough_selected)
-
+        with fig_col1:
+            seasonal = monthly_admissions.copy()
+            seasonal.set_index('Date', inplace=True)
+            result = seasonal_decompose(seasonal, model='additive', period=12)
+            result = result.plot()
+            st.pyplot(result)
+        with fig_col2:
+            st.write('"Trend" reflects overall trend of data')
+            st.write('"Seasonal" reflects seasonality of data')
+            st.write('"Residual" reflects noise/random variation in data')
 
 
 
@@ -513,7 +876,7 @@ def individual_data_suite(borough):
     df_fastfood = fast_food_data()
     air_pollution = air_pollution_data()
 
-    tab1, tab2 = st.tabs(["Time Series", "Attribute Correlations"])
+    tab1, tab2 = st.tabs(["Time Series", "Regressions/Correlations"])
 
     with tab1:
         # Date slider widget from 2003-2020
@@ -668,77 +1031,131 @@ def individual_data_suite(borough):
 
 
     with tab2:
-        # Multiple Linear Regression
+        fig_col1, fig_col2 = st.columns((1,1),gap='medium')
         # Get values for all attributes 2003-2019
-        regression_df = borough_df.iloc[0:17]
+        regression_df = pd.DataFrame(columns=['Date', 'Emergency Admissions', 'Ambulatory Care Sensitive Condition Admissions', 'Fast Food Prevalence', 'Particulate Emissions'])
+        # Create rows with attribute values for each year
+        for i in range(2003, 2020):
+            year_vals = [str(i)]
+            df_str = 'df_' + str(i)
+            year_vals.append(float(e_admissions[df_str].loc[e_admissions[df_str]['Area'] == str(borough), 'EmergencyAdmissions']))
+            df_str = str(i)
+            year_vals.append(float(df_acsc.loc[(df_acsc['Year'] == df_str) & (df_acsc['Area'] == str(borough)) & (df_acsc['Quarter'] == 'Annual')].head(1)['Observed']))
+            year_vals.append(float(df_fastfood.loc[(df_fastfood['Area'] == str(borough))].head(1)[df_str]))
+            df_str = 'df_' + str(i)
+            if i in no_air_vals:
+                year_vals.append(np.nan)
+            else:
+                year_vals.append(float(air_pollution[df_str].loc[(air_pollution[df_str]['Area'] == str(borough))]['PM25']))
+            # Add row created to end of df
+            regression_df.loc[len(regression_df)] = year_vals
 
-        # Air Pollution values incomplete (contain nan values), calculate regression coefficient separately
-        # Get Air Pollution independant variable
-        regression_airp_x_df = regression_df.drop(['Date', 'Emergency Admissions/100', 'ACSC Admissions/10', 'Number of Takeaways'], axis=1)
-        # Drop rows with nan values
-        regression_airp_x_df = regression_airp_x_df.drop([0,1,2,3,4,6,8,11,14,15], axis=0)
-        # Convert dataframe to numpy array
-        airp_x = regression_airp_x_df.to_numpy()
+        with fig_col1:
+            st.markdown('###')
+            st.write('Linear Regression Weights give the steepness of the relationship between variables')
+            st.write('How Strong is the effect of the relationship')
+            # Multiple Linear Regression
 
-        # Each element in y is e_admissions value for a year
-        # Get dependent emergency admission variable
-        regression_airp_y_df = regression_df.filter(['Emergency Admissions/100'], axis=1)
-        # Drop rows with nan values
-        regression_airp_y_df = regression_airp_y_df.drop([0,1,2,3,4,6,8,11,14,15], axis=0)
-        # Convert dataframe to numpy array
-        airp_y = regression_airp_y_df.to_numpy()
+            # Air Pollution values incomplete (contain nan values), calculate regression coefficient separately
+            # Get Air Pollution independant variable
+            regression_airp_x_df = regression_df.drop(['Date', 'Emergency Admissions', 'Ambulatory Care Sensitive Condition Admissions', 'Fast Food Prevalence'], axis=1)
+            # Drop rows with nan values
+            regression_airp_x_df = regression_airp_x_df.drop([0,1,2,3,4,6,8,11,14,15], axis=0)
+            # Convert dataframe to numpy array
+            airp_x = regression_airp_x_df.to_numpy()
 
-        # Fit model
-        airp_model = LinearRegression().fit(airp_x, airp_y)
-        # Use model to look at relationships between independent variables and emergency admissions
-        # model.coef_ to get variable weights
-        airp_coefficient = airp_model.coef_.tolist()
-        airp_weight = 0
-        for x in airp_coefficient:
-            for y in x:
-                airp_weight = y
+            # Each element in y is e_admissions value for a year
+            # Get dependent emergency admission variable
+            regression_airp_y_df = regression_df.filter(['Emergency Admissions'], axis=1)
+            # Drop rows with nan values
+            regression_airp_y_df = regression_airp_y_df.drop([0,1,2,3,4,6,8,11,14,15], axis=0)
+            # Convert dataframe to numpy array
+            airp_y = regression_airp_y_df.to_numpy()
 
-        # Each element in x is the values of the independent variables for a year (all variables except date, emergency admissions and air pollution)
-        # Get independent variables by borough_df
-        regression_x_df = regression_df.drop(['Date', 'Emergency Admissions/100', 'PM2.5 Particulate Emissions (tonnes/year)'], axis=1)
-        # Convert dataframe to numpy array
-        x = regression_x_df.to_numpy()
+            # Fit model
+            airp_model = LinearRegression().fit(airp_x, airp_y)
+            # Use model to look at relationships between independent variables and emergency admissions
+            # model.coef_ to get variable weights
+            airp_coefficient = airp_model.coef_.tolist()
+            airp_weight = 0
+            for x in airp_coefficient:
+                for y in x:
+                    airp_weight = y
 
-        # Each element in y is e_admissions value for a year
-        # Get dependent emergency admission variable
-        regression_y_df = regression_df.filter(['Emergency Admissions/100'], axis=1)
-        # Convert dataframe to numpy array
-        y = regression_y_df.to_numpy()
+            # Each element in x is the values of the independent variables for a year (all variables except date, emergency admissions and air pollution)
+            # Get independent variables by borough_df
+            regression_x_df = regression_df.drop(['Date', 'Emergency Admissions', 'Particulate Emissions'], axis=1)
+            # Convert dataframe to numpy array
+            x = regression_x_df.to_numpy()
 
-        # Fit model
-        model = LinearRegression().fit(x, y)
+            # Each element in y is e_admissions value for a year
+            # Get dependent emergency admission variable
+            regression_y_df = regression_df.filter(['Emergency Admissions'], axis=1)
+            # Convert dataframe to numpy array
+            y = regression_y_df.to_numpy()
 
-        # Use model to look at relationships between independent variables and emergency admissions
-        # model.coef_ to get variable weights
-        coefficients = model.coef_.tolist()
-        weights = []
-        for x in coefficients:
-            for y in x:
-                weights.append(y)
-        weights.append(airp_weight)
+            # Fit model
+            model = LinearRegression().fit(x, y)
 
-        radar_df = pd.DataFrame(dict(
-            r=weights,
-            theta=['ACSC Admissions', 'Fast Food Prevalence', 'Air Pollution']))
-        fig = px.line_polar(radar_df, r='r', theta='theta', line_close=True, range_r=[0,1], width=800, height=600)
-        fig.update_traces(fill='toself')
-        fig.update_polars(bgcolor='white')
-        fig.update_layout(polar_angularaxis_gridcolor="black")
-        fig.update_layout(
-            font=dict(
-                family="Arial",
-                size=22,
+            # Use model to look at relationships between independent variables and emergency admissions
+            # model.coef_ to get variable weights
+            coefficients = model.coef_.tolist()
+            weights = []
+            for x in coefficients:
+                for y in x:
+                    weights.append(y)
+            weights.append(airp_weight)
+
+            radar_df = pd.DataFrame(dict(
+                r=weights,
+                theta=['ACSC Admissions', 'Fast Food Prevalence', 'Air Pollution']))
+            fig = px.line_polar(radar_df, r='r', theta='theta', line_close=True, width=800, height=600)
+            # fig = px.line_polar(radar_df, r='r', theta='theta', line_close=True, range_r=[0,1], width=800, height=600)
+            fig.update_traces(fill='toself')
+            fig.update_polars(bgcolor='white')
+            fig.update_layout(polar_angularaxis_gridcolor="black")
+            fig.update_layout(
+                font=dict(
+                    family="Arial",
+                    size=22,
+                )
             )
-        )
-        st.markdown('##')
-        st.markdown("### Linear Regression Relationship Weights")
-        st.markdown('##')
-        st.plotly_chart(fig, theme="None", use_container_width=True)
+            st.markdown('##')
+            st.markdown("### Linear Regression Relationship Weights")
+            st.markdown('##')
+            st.plotly_chart(fig, theme="None", use_container_width=True)
+
+        with fig_col2:
+            st.markdown('###')
+            st.write('Pearson correlation coefficient measures strength and direction of two variables\' linear relationship')
+            st.write('How strong is the relationship itself')
+            # Pearson Correlation Coefficients
+
+            correlations = []
+            correlations.append(stats.pearsonr(regression_df['Emergency Admissions'], regression_df['Ambulatory Care Sensitive Condition Admissions'])[0])
+            correlations.append(stats.pearsonr(regression_df['Emergency Admissions'], regression_df['Fast Food Prevalence'])[0])
+
+            air_pollution_corr = regression_df.drop([0,1,2,3,4,6,8,11,14,15], axis=0)
+            correlations.append(stats.pearsonr(air_pollution_corr['Emergency Admissions'], air_pollution_corr['Particulate Emissions'])[0])
+
+            radar_df = pd.DataFrame(dict(
+                r=correlations,
+                theta=['ACSC Admissions', 'Fast Food Prevalence', 'Air Pollution']))
+            fig = px.line_polar(radar_df, r='r', theta='theta', line_close=True, width=800, height=600)
+            # fig = px.line_polar(radar_df, r='r', theta='theta', line_close=True, range_r=[0,1], width=800, height=600)
+            fig.update_traces(fill='toself')
+            fig.update_polars(bgcolor='white')
+            fig.update_layout(polar_angularaxis_gridcolor="black")
+            fig.update_layout(
+                font=dict(
+                    family="Arial",
+                    size=22,
+                )
+            )
+            st.markdown('##')
+            st.markdown("### Pearson Correlation Coefficients")
+            st.markdown('##')
+            st.plotly_chart(fig, theme="None", use_container_width=True)
 
 
 
